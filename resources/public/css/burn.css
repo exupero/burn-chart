@@ -1,0 +1,79 @@
+html, body {
+  font-family: 'PT Sans', Arial, sans-serif;
+}
+
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding-bottom: 10rem;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  border-width: 0;
+  border-radius: 2px;
+  background-color: #eee;
+  cursor: pointer;
+}
+
+textarea {
+  font-family: 'PT Mono', monospace;
+  width: 8rem;
+  height: 10rem;
+}
+
+svg text {
+  font-family: 'PT Sans', Arial, sans-serif;
+  fill: gray;
+}
+
+.column-left {
+  width: 48%;
+  float: left;
+}
+
+.column-right {
+  width: 48%;
+  float: right;
+}
+
+.bordered {
+  border: 1px solid lightgray;
+}
+
+.right {
+  float: right;
+}
+
+.clearfix {
+  clear: both;
+}
+
+.width-full {
+  width: 100%;
+}
+
+.axis {
+  stroke: lightgray;
+}
+
+.scope {
+  stroke: steelblue;
+  stroke-width: 3;
+  stroke-linecap: round;
+  fill: none;
+}
+
+.progress {
+  stroke: firebrick;
+  stroke-width: 3;
+  stroke-linecape: round;
+  fill: none;
+}
+
+.projection {
+  stroke: firebrick;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 5 10;
+}
