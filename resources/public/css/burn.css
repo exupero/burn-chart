@@ -77,3 +77,24 @@ svg text {
   stroke-linecap: round;
   stroke-dasharray: 5 10;
 }
+
+.label--radio + .label--radio {
+  margin-left: 0.5rem;
+}
+
+.label--radio input {
+  float: left;
+  margin-right: 0.5rem;
+}
+
+.spaced {
+  margin: 1rem 0;
+}
+
+.horizontal {
+  display: flex;
+}
+
+.muted {
+  color: dimgray;
+}
