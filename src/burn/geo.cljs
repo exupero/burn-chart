@@ -1,5 +1,6 @@
 (ns burn.geo)
 
+(def abs #(.abs js/Math %1 %2))
 (def pow #(.pow js/Math %1 %2))
 (def ceil #(.ceil js/Math %))
 (def floor #(.floor js/Math %))
@@ -61,3 +62,14 @@
 
 (defn drop-percent [p xs]
   (drop (round (* p (count xs))) xs))
+
+(defn zeroed [data]
+  (let [[d1 p s] (first data)]
+    (if (zero? p)
+      data
+      (let [[d2] (second data)
+            d0 (before d1 (days->ms (days-between d1 d2)))]
+        (concat [[d0 0 s]] data)))))
+
+(defn fmt-date [d]
+  (.toLocaleDateString d))

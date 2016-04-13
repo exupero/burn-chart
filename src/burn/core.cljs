@@ -5,8 +5,10 @@
             [cljs.reader :as reader]
             [clojure.string :as string]
             [goog.crypt.base64 :as b64]
+            [ajax.core :refer [GET]]
             [vdom.elm :refer [foldp render!]]
-            [burn.ui :as ui]))
+            burn.ui
+            burn.analysis))
 
 (enable-console-print!)
 
@@ -15,11 +17,16 @@
         (str "/" (b64/encodeString (pr-str m))))
   m)
 
+(declare emit)
+
 (defn step [model action]
   (match action
     :no-op model
     [:update s] (persist! (assoc model :raw-data s))
-    [:projection-strategy s] (persist! (assoc model :projector s)) ))
+    [:projection-strategy s] (persist! (assoc model :projector s))
+    [:load fname] (do
+                    (GET fname {:handler #(emit [:update %])})
+                    (assoc model :filename fname))))
 
 (def initial-model
   (or
@@ -31,7 +38,7 @@
       (catch js/Exception e
         nil))
     {:raw-data ""
-     :projector :extremes}))
+     :projector :average-last-three}))
 
 (defonce actions (chan))
 (def emit #(put! actions %))
@@ -39,7 +46,7 @@
 (defonce models (foldp step initial-model actions))
 
 (defonce setup
-  (render! (async/map #(ui/ui emit %) [models]) (.getElementById js/document "app")))
+  (render! (async/map #(burn.ui/ui emit %) [models]) (.getElementById js/document "app")))
 
 (defn figwheel-reload []
   (put! actions :no-op))

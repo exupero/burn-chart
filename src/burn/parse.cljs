@@ -6,9 +6,9 @@
 (def scope #(nth % 2))
 
 (defn parse-date [raw]
-  (let [[m d y] (string/split raw #"/")]
+  (let [[y m d] (string/split raw #"-")]
     (js/Date.
-      (+ 2000 (int y))
+      (int y)
       (dec (int m))
       (int d))))
 

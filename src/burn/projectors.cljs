@@ -21,20 +21,12 @@
   (-fastest [_ data]
     (->> data geo/points-per-day (sort <) (geo/drop-percent low) geo/average)))
 
-(defrecord Current []
-  IProjection
-  (-slowest [_ data]
-    (let [[[d1] [d2 p]] (drop (- (count data) 2) data)]
-      (/ p (geo/days-between d1 d2))))
-  (-fastest [this data]
-    (-slowest this data)))
-
 (defrecord Extremes []
   IProjection
   (-slowest [_ data]
-    (->> data geo/points-per-day (apply min)))
+    (->> data geo/points-per-day (filter pos?) (apply min)))
   (-fastest [_ data]
-    (->> data geo/points-per-day (apply max))))
+    (->> data geo/points-per-day (filter pos?) (apply max))))
 
 (defrecord WeightedMostRecent [n weight]
   IProjection
@@ -46,35 +38,55 @@
   (-fastest [this data]
     (-slowest this data)))
 
+(defrecord HarmonicMean []
+  IProjection
+  (-slowest [_ data]
+    (/ (geo/average (map #(/ %) (filter pos? (geo/points-per-day data))))))
+  (-fastest [this data]
+    (-slowest this data)))
+
 (def projectors
   (sorted-map
     :average
-    {:name "Average"
-     :desc "Project the average velocity of all sprints."
+    {:name "Average of All Sprints"
+     :summary (fn [s [soon late]]
+                [:div {}
+                 "Based on our average sprint velocity and current scope of "
+                 [:strong {} s " points"]
+                 ", we will finish on "
+                 [:strong {} (geo/fmt-date late)]
+                 "."])
      :fn (Middle. 0 0)}
 
+    :average-last-three
+    {:name "Average of Last 3 Sprints"
+     :summary (fn [s [soon late]]
+                [:div {}
+                 "Based on our average sprint velocity over the last 3 sprints and our current scope of "
+                 [:strong {} s " points"]
+                 ", we will finish on "
+                 [:strong {} (geo/fmt-date late)]
+                "."])
+     :fn (WeightedMostRecent. 3 1)}
+
     :current
-    {:name "Current"
-     :desc "Project the most recent sprint's velocity."
-     :fn (Current.)}
+    {:name "Last Sprint's Velocity"
+     :summary (fn [s [soon late]]
+                [:div {}
+                 "Based on our most recent sprint's velocity and our current scope of "
+                 [:strong {} s " points"]
+                 ", we will finish on "
+                 [:strong {} (geo/fmt-date late)]])
+     :fn (WeightedMostRecent. 1 1)}
 
     :extremes
-    {:name "Extremes"
-     :desc "Project the fastest and slowest sprints' velocities."
-     :fn (Extremes.)}
-
-    :top-10-bottom-50
-    {:name "Top 10%, Bottom 50%"
-     :desc "Project the averages of the fastest 10% and the slowest 50% of sprint velocities."
-     :fn (Middle. 0.9 0.5)}
-
-    :top-80-bottom-80
-    {:name "Top 80%, Bottom 80%"
-     :desc "Project the averages of the fastest 80% and the slowest 80% of sprint velocities."
-     :fn (Middle. 0.2 0.2)}
-
-    :weighted-most-recent
-    {:name "Weighted Most Recent"
-     :desc "Project an average sprint velocity, weighting toward the most recent sprint's velocity."
-     :fn (WeightedMostRecent. 1 0.5)}
-    ))
+    {:name "Most Extreme Sprint Velocities"
+     :summary (fn [s [soon late]]
+                [:div {}
+                 "Based on our fastest and slowest sprint velocities and our current scope of "
+                 [:strong {} s " points"]
+                 ", we will finish between "
+                 [:strong {} (geo/fmt-date soon)]
+                 " and "
+                 [:strong {} (geo/fmt-date late)]])
+     :fn (Extremes.)}))
