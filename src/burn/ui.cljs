@@ -124,41 +124,79 @@
   (let [el (.getElementById js/document "visualization")]
     (js/saveSvgAsPng el nm (clj->js {:scale 4}))))
 
-(defn ui [emit {:keys [projector raw-data]}]
+(defn drop-boundary [[w h]]
+  [:rect {:x 10
+          :y 10
+          :width (- w 20)
+          :height ( - h 20)
+          :rx 20
+          :ry 20
+          :stroke "gray"
+          :stroke-width 3
+          :stroke-dasharray "10 10"
+          :fill "none"}])
+
+(defn dragging-copy [f]
+  (fn [evt]
+    (.stopPropagation evt)
+    (.preventDefault evt)
+    (aset (.-dataTransfer evt) "dropEffect" "copy")
+    (f)))
+
+(defn dragging-exit [f]
+  (fn [evt]
+    (.stopPropagation evt)
+    (.preventDefault evt)
+    (f)))
+
+(defn dropping-read [f]
+  (fn [evt]
+    (.stopPropagation evt)
+    (.preventDefault evt)
+    (let [file (-> evt .-dataTransfer .-files (aget 0))
+          reader (js/FileReader.)]
+      (aset reader "onload" #(f (-> % .-target .-result)))
+      (.readAsText reader file))))
+
+(defn ui [emit {:keys [projector raw-data dropping?]}]
   (let [raw-data (.trim raw-data)
         proj (project/projectors projector)]
     [:main {}
-     [:div {:className "right"}
-      [:button {:onclick #(save-png "burn-chart")} "Download"]]
      [:h1 {} "Burn Chart"]
-     [:div {:className "spaced horizontal"}
-      (for [[k v] project/projectors]
-        [:label {:className "label--radio"}
-         [:input {:type "radio"
-                  :checked (= k projector)
-                  :onclick #(emit [:projection-strategy k])}]
-         [:small {} (v :name)]])]
+     [:div {:className "align-middles spread spaced"}
+      [:div {:className "horizontal"}
+       (for [[k v] project/projectors]
+         [:label {:className "label--radio"}
+          [:input {:type "radio"
+                   :checked (= k projector)
+                   :onclick #(emit [:projection-strategy k])}]
+          [:small {} (v :name)]])]
+      [:div {:className ""}
+       [:button {:onclick #(emit :clear)} "Clear"]
+       [:button {:onclick #(save-png "burn-chart")} "Download"]]]
      (let [[width height] [960 500]
            data (p/parse-csv raw-data)]
        [:svg {:width width
               :height height
               :id "visualization"
-              :class "bordered"}
+              :class "bordered"
+              :ondragover (dragging-copy #(when-not dropping? (emit [:dropping true])))
+              :ondragleave (dragging-exit #(when dropping? (emit [:dropping false])))
+              :ondrop (dropping-read #(emit [:update %]))}
+        (when dropping?
+          (drop-boundary [width height]))
         (if (seq data)
           (burn-chart [width height] proj data)
-          [:text {:transform (svg/translate (/ width 2) (/ height 2))
-                  :dy 5
-                  :text-anchor "middle"}
-           "No data"])])
-     [:h2 {} "Data"]
-     [:div {:className "column-left"}
-      [:p {} "Specify your data as comma-separated values. There are three fields:"]
-      [:ul {}
-       [:li {} "date, in the format \"yyyy-mm-dd\""]
-       [:li {} "points completed between the given date and the date of the previous row"]
-       [:li {} "total points in scope as of the given date"]]]
-     [:div {:className "column-right"}
-      [:textarea {:className "width-full"
-                  :onkeyup #(this-as this (emit [:update (.-value this)]))}
-       raw-data]]
-     [:div {:className "clearfix"}]]))
+          (let [w 625
+                h 175]
+            [:foreignObject {:x (- (/ width 2) (/ w 2))
+                             :y (- (/ height 2) (/ h 2))
+                             :width w
+                             :height h
+                             :font-size 24}
+             [:div {:style {:color "dimgray"}}
+              "Drag and drop a CSV file with 3 fields per row:"
+              [:ul {}
+               [:li {} "Date a sprint was completed, in the format YYYY-MM-DD"]
+               [:li {} "Number of points completed in the sprint"]
+               [:li {} "Total number of points in the project"]]]]))])]))

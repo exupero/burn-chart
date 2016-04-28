@@ -27,30 +27,12 @@ svg text {
   fill: gray;
 }
 
-.column-left {
-  width: 48%;
-  float: left;
-}
-
-.column-right {
-  width: 48%;
-  float: right;
+button + button {
+  margin-left: 0.3rem;
 }
 
 .bordered {
   border: 1px solid lightgray;
-}
-
-.right {
-  float: right;
-}
-
-.clearfix {
-  clear: both;
-}
-
-.width-full {
-  width: 100%;
 }
 
 .axis {
@@ -88,7 +70,7 @@ svg text {
 }
 
 .spaced {
-  margin: 1rem 0;
+  margin-bottom: 0.5rem;
 }
 
 .horizontal {
@@ -97,4 +79,14 @@ svg text {
 
 .muted {
   color: dimgray;
+}
+
+.align-middles {
+  display: flex;
+  align-items: center;
+}
+
+.spread {
+  display: flex;
+  justify-content: space-between;
 }
